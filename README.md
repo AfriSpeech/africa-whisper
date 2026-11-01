@@ -2,6 +2,8 @@
 ### Universal Multilingual Speech Recognition for 314 African Languages
 
 [![Hugging Face Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model%20Checkpoints-blue)](https://huggingface.co/AfriSpeech/africa-whisper-checkpoints)
+[![Hugging Face CT2](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-CTranslate2%20Model-purple)](https://huggingface.co/AfriSpeech/africa-whisper-ct2)
+[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Interactive%20Space-green)](https://huggingface.co/spaces/AfriSpeech/africa-whisper)
 [![Hugging Face Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-orange)](https://huggingface.co/datasets/AfriSpeech/afri2universal)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
@@ -137,6 +139,35 @@ print(transcribe("sample.wav"))
 ```bash
 python scripts/transcribe.py --audio path/to/african_speech.wav
 ```
+
+### 4. Fast Inference with `faster-whisper` (CTranslate2) ⚡
+
+For production high-throughput transcription (up to 4x faster and 50% less VRAM):
+
+```bash
+pip install faster-whisper
+```
+
+```python
+from faster_whisper import WhisperModel
+
+model = WhisperModel("AfriSpeech/africa-whisper-ct2", device="cuda", compute_type="float16")
+segments, info = model.transcribe("sample.wav", language="en", task="transcribe", without_timestamps=True)
+print(" ".join(s.text.strip() for s in segments))
+```
+
+---
+
+## ☁️ Serverless Deployment on Modal
+
+We provide `modal_server.py` to deploy an auto-scaling, serverless GPU ASR API on [Modal](https://modal.com):
+
+```bash
+modal deploy modal_server.py
+```
+- **Idle Cost:** Scales to zero when inactive ($0 cost).
+- **Wakeup:** Automatically spins up a T4 GPU container on incoming audio requests.
+- **Interactive Web Demo:** Deployed as a static space on [Hugging Face Spaces](https://huggingface.co/spaces/AfriSpeech/africa-whisper).
 
 ---
 
