@@ -128,6 +128,7 @@ def main():
 
     # Configure LoRA
     peft_config = LoraConfig(
+        task_type="SEQ_2_SEQ_LM",
         r=32,
         lora_alpha=64,
         target_modules=["q_proj", "v_proj"],
