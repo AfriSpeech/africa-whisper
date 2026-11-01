@@ -1,0 +1,74 @@
+[
+  {
+    "language": "Fante",
+    "iso": "fat",
+    "africa": 76.11,
+    "base": 128.51,
+    "paza": 180.62,
+    "mms": 70.24,
+    "omni_ctc_300m": 70.42
+  },
+  {
+    "language": "Twi",
+    "iso": "twi",
+    "africa": 75.37,
+    "base": 130.3,
+    "paza": 188.05,
+    "mms": 70.51,
+    "omni_ctc_300m": 70.5
+  },
+  {
+    "language": "Kiswahili",
+    "iso": "swa",
+    "africa": 73.58,
+    "base": 69.55,
+    "paza": 196.64,
+    "mms": 69.32,
+    "omni_ctc_300m": 69.45
+  },
+  {
+    "language": "Yoruba",
+    "iso": "yor",
+    "africa": 80.02,
+    "base": 78.98,
+    "paza": 167.13,
+    "mms": 67.48,
+    "omni_ctc_300m": 67.67
+  },
+  {
+    "language": "Igbo",
+    "iso": "ibo",
+    "africa": 78.06,
+    "base": 132.32,
+    "paza": 147.34,
+    "mms": 68.11,
+    "omni_ctc_300m": 68.15
+  },
+  {
+    "language": "Malagasy",
+    "iso": "mlg",
+    "africa": 72.07,
+    "base": 94.29,
+    "paza": 119.87,
+    "mms": 65.86,
+    "omni_ctc_300m": 66.25
+  },
+  {
+    "language": "Efik",
+    "iso": "efi",
+    "africa": 77.68,
+    "base": 138.56,
+    "paza": 151.15,
+    "mms": null,
+    "omni_ctc_300m": 69.75
+  },
+  {
+    "language": "MACRO AVG",
+    "iso": "all",
+    "africa": 76.13,
+    "base": 110.36,
+    "paza": 164.4,
+    "mms": 68.59,
+    "omni_ctc_300m": 68.88
+  }
+]
