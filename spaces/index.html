@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Africa-Whisper - a Hugging Face Space</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'media',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Source Sans Pro"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"IBM Plex Mono"', 'monospace'],
+          },
+          colors: {
+            gradio: {
+              orange: '#ff7c00',
+              hover: '#e56f00',
+              border: '#e5e7eb',
+              darkborder: '#374151',
+              darkbg: '#1f2937',
+              darkinput: '#111827',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen py-6 px-4 sm:px-6 font-sans antialiased">
+
+  <div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Title & Description (Gradio Header) -->
+    <div class="space-y-1 text-center sm:text-left">
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+        Africa-Whisper
+      </h1>
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        Universal Multilingual Speech Recognition across 314 African languages using Whisper Large-v3-Turbo LoRA. Transcripts are standardized into universal lowercase Latin text (<code>a-z</code>) with preserved word boundaries and no punctuation via Africa-G2P.
+      </p>
+    </div>
+
+    <!-- Gradio 2-Column Interface -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+
+      <!-- Left Column: Inputs -->
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm space-y-4">
+        
+        <!-- Audio Input Label & Source Selector -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Audio Input</span>
+            <span id="backend-status" class="text-xs text-green-600 dark:text-green-400 flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span>
+              <span>Modal Serverless GPU</span>
+            </span>
+          </div>
+
+          <!-- Gradio Segmented Tabs -->
+          <div class="flex rounded-md bg-gray-100 dark:bg-gray-900 p-1 text-xs font-semibold mb-3">
+            <button id="tab-record" onclick="setTab('record')" class="flex-1 py-1.5 px-3 rounded bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-white transition">
+              Microphone
+            </button>
+            <button id="tab-upload" onclick="setTab('upload')" class="flex-1 py-1.5 px-3 rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">
+              Upload
+            </button>
+          </div>
+
+          <!-- Microphone Panel -->
+          <div id="panel-record" class="border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center space-y-3 bg-gray-50/50 dark:bg-gray-900/40">
+            <div class="flex items-center justify-center space-x-3">
+              <button id="btn-record-toggle" onclick="toggleRecording()" class="w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center text-xl shadow transition">
+                🎤
+              </button>
+              <div class="text-left">
+                <span id="record-timer" class="font-mono text-lg font-bold text-gray-800 dark:text-gray-200 block">00:00</span>
+                <span id="record-status" class="text-xs text-gray-500 dark:text-gray-400">Click to record</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload Panel -->
+          <div id="panel-upload" class="hidden border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center bg-gray-50/50 dark:bg-gray-900/40">
+            <label for="file-input" class="cursor-pointer block space-y-1">
+              <div class="text-2xl mb-1">📁</div>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Drop audio here or click to upload</span>
+              <p class="text-xs text-gray-400">WAV, MP3, FLAC, M4A, OGG, WEBM</p>
+              <input id="file-input" type="file" accept="audio/*" class="hidden" onchange="handleFileSelected(event)">
+            </label>
+          </div>
+
+          <!-- Audio Preview Player -->
+          <div id="audio-preview-box" class="hidden mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+              <span>Selected Audio:</span>
+              <button onclick="clearAudio()" class="text-red-500 hover:underline">Remove</button>
+            </div>
+            <audio id="audio-player" controls class="w-full h-9"></audio>
+          </div>
+        </div>
+
+        <!-- Action Buttons (Clear & Submit) -->
+        <div class="flex space-x-2 pt-2">
+          <button onclick="clearAudio()" class="flex-1 py-2 px-4 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold text-sm transition">
+            Clear
+          </button>
+          <button id="btn-submit" onclick="submitTranscription()" disabled class="flex-1 py-2 px-4 rounded-md bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition shadow-sm flex items-center justify-center space-x-2">
+            <span id="btn-text">Submit</span>
+            <svg id="btn-spinner" class="hidden animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Outputs -->
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm space-y-3 min-h-[280px] flex flex-col justify-between">
+        
+        <div>
+          <!-- Label & Copy Button -->
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Transcription (Universal Latin)</span>
+            <button id="copy-btn" onclick="copyTranscription()" class="hidden text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition">
+              <span id="copy-text">📋 Copy</span>
+            </button>
+          </div>
+
+          <!-- Gradio-style Text Output Container -->
+          <div class="w-full min-h-[160px] p-3 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-sm font-mono text-gray-800 dark:text-gray-100 flex flex-col justify-between">
+            <div id="output-box" class="whitespace-pre-wrap leading-relaxed text-gray-400 italic">
+              Transcription will appear here...
+            </div>
+            <div id="loading-indicator" class="hidden text-xs text-orange-500 animate-pulse pt-2 font-sans font-semibold">
+              ⏳ Running faster-whisper CTranslate2 on Modal GPU...
+            </div>
+          </div>
+        </div>
+
+        <!-- Latency / Duration Metrics Pill -->
+        <div id="metrics-bar" class="hidden pt-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 flex justify-between">
+          <span>Audio Duration: <strong id="val-duration" class="text-gray-800 dark:text-gray-200">-</strong></span>
+          <span>Latency: <strong id="val-latency" class="text-gray-800 dark:text-gray-200">-</strong></span>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Gradio Examples Section -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm space-y-2">
+      <h3 class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Model Details & Performance</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+        <div class="p-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+          <span class="text-gray-500 block">Languages</span>
+          <strong class="text-gray-900 dark:text-white text-sm">314 African</strong>
+        </div>
+        <div class="p-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+          <span class="text-gray-500 block">Word Error Rate</span>
+          <strong class="text-gray-900 dark:text-white text-sm">45.74%</strong>
+        </div>
+        <div class="p-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+          <span class="text-gray-500 block">Character Error Rate</span>
+          <strong class="text-gray-900 dark:text-white text-sm">20.50%</strong>
+        </div>
+        <div class="p-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+          <span class="text-gray-500 block">Checkpoint</span>
+          <strong class="text-gray-900 dark:text-white text-sm">Step 76,000</strong>
+        </div>
+      </div>
+      <div class="text-xs text-gray-500 dark:text-gray-400 pt-2 flex flex-wrap gap-3">
+        <a href="https://huggingface.co/AfriSpeech/africa-whisper-checkpoints" target="_blank" class="text-orange-500 hover:underline">🤗 Model Checkpoint</a>
+        <span>•</span>
+        <a href="https://huggingface.co/AfriSpeech/africa-whisper-ct2" target="_blank" class="text-orange-500 hover:underline">⚡ CTranslate2 Model</a>
+        <span>•</span>
+        <a href="https://huggingface.co/datasets/AfriSpeech/afri2universal" target="_blank" class="text-orange-500 hover:underline">📚 Dataset (314 languages)</a>
+        <span>•</span>
+        <a href="https://github.com/AfriSpeech/africa-whisper" target="_blank" class="text-orange-500 hover:underline">💻 GitHub Code</a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const ENDPOINT = "https://michethowusuwfp2--africa-whisper-server-africawhisperserver-web.modal.run/transcribe";
+
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let timerInterval = null;
+    let seconds = 0;
+    let currentBlob = null;
+
+    function setTab(tab) {
+      const tabRecord = document.getElementById('tab-record');
+      const tabUpload = document.getElementById('tab-upload');
+      const panelRecord = document.getElementById('panel-record');
+      const panelUpload = document.getElementById('panel-upload');
+
+      if (tab === 'record') {
+        tabRecord.className = "flex-1 py-1.5 px-3 rounded bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-white transition";
+        tabUpload.className = "flex-1 py-1.5 px-3 rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition";
+        panelRecord.classList.remove('hidden');
+        panelUpload.classList.add('hidden');
+      } else {
+        tabUpload.className = "flex-1 py-1.5 px-3 rounded bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-white transition";
+        tabRecord.className = "flex-1 py-1.5 px-3 rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition";
+        panelUpload.classList.remove('hidden');
+        panelRecord.classList.add('hidden');
+      }
+    }
+
+    async function toggleRecording() {
+      const btn = document.getElementById('btn-record-toggle');
+      const status = document.getElementById('record-status');
+
+      if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = e => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            currentBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            setAudio(currentBlob);
+            stream.getTracks().forEach(t => t.stop());
+          };
+
+          mediaRecorder.start();
+          seconds = 0;
+          btn.innerHTML = "⏹️";
+          btn.classList.add('animate-pulse');
+          status.innerText = "Recording... Click to stop";
+
+          timerInterval = setInterval(() => {
+            seconds++;
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            document.getElementById('record-timer').innerText = `${m}:${s}`;
+          }, 1000);
+
+        } catch (err) {
+          alert("Microphone error: " + err.message);
+        }
+      } else {
+        mediaRecorder.stop();
+        clearInterval(timerInterval);
+        btn.innerHTML = "🎤";
+        btn.classList.remove('animate-pulse');
+        status.innerText = "Recording ready";
+      }
+    }
+
+    function handleFileSelected(event) {
+      const file = event.target.files[0];
+      if (file) {
+        currentBlob = file;
+        setAudio(file);
+      }
+    }
+
+    function setAudio(blobOrFile) {
+      const box = document.getElementById('audio-preview-box');
+      const player = document.getElementById('audio-player');
+      const submitBtn = document.getElementById('btn-submit');
+
+      player.src = URL.createObjectURL(blobOrFile);
+      box.classList.remove('hidden');
+      submitBtn.disabled = false;
+    }
+
+    function clearAudio() {
+      currentBlob = null;
+      document.getElementById('audio-player').src = "";
+      document.getElementById('audio-preview-box').classList.add('hidden');
+      document.getElementById('btn-submit').disabled = true;
+      document.getElementById('file-input').value = "";
+      document.getElementById('record-timer').innerText = "00:00";
+      document.getElementById('record-status').innerText = "Click to record";
+      document.getElementById('copy-btn').classList.add('hidden');
+      document.getElementById('metrics-bar').classList.add('hidden');
+      const out = document.getElementById('output-box');
+      out.innerText = "Transcription will appear here...";
+      out.classList.add('italic', 'text-gray-400');
+    }
+
+    async function submitTranscription() {
+      if (!currentBlob) return;
+
+      const submitBtn = document.getElementById('btn-submit');
+      const btnText = document.getElementById('btn-text');
+      const spinner = document.getElementById('btn-spinner');
+      const outputBox = document.getElementById('output-box');
+      const loading = document.getElementById('loading-indicator');
+      const copyBtn = document.getElementById('copy-btn');
+      const metricsBar = document.getElementById('metrics-bar');
+
+      submitBtn.disabled = true;
+      btnText.innerText = "Processing...";
+      spinner.classList.remove('hidden');
+      loading.classList.remove('hidden');
+
+      const formData = new FormData();
+      formData.append("audio", currentBlob, "audio.wav");
+
+      try {
+        const res = await fetch(ENDPOINT, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || `Server error: ${res.status}`);
+        }
+
+        const data = await res.json();
+        outputBox.innerText = data.transcription || "(No speech detected)";
+        outputBox.classList.remove('italic', 'text-gray-400');
+        outputBox.classList.add('text-gray-900', 'dark:text-white');
+
+        document.getElementById('val-latency').innerText = `${data.latency_seconds}s`;
+        document.getElementById('val-duration').innerText = `${data.duration}s`;
+        metricsBar.classList.remove('hidden');
+        copyBtn.classList.remove('hidden');
+
+      } catch (err) {
+        outputBox.innerText = `Error: ${err.message}`;
+        outputBox.classList.add('text-red-500');
+      } finally {
+        submitBtn.disabled = false;
+        btnText.innerText = "Submit";
+        spinner.classList.add('hidden');
+        loading.classList.add('hidden');
+      }
+    }
+
+    function copyTranscription() {
+      const text = document.getElementById('output-box').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const copyText = document.getElementById('copy-text');
+        copyText.innerText = "✅ Copied";
+        setTimeout(() => { copyText.innerText = "📋 Copy"; }, 1800);
+      });
+    }
+  </script>
+
+</body>
+</html>
